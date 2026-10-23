@@ -4,15 +4,17 @@ Run a finite Windows task without allocating a console, preserve its exit code,
 and retain evidence of what happened. Includes executable acceptance checks for
 Python, PowerShell, literal arguments and process-tree timeouts.
 
-**Status: 0.1.0 alpha, prepared for an initial open-source release.** Windows 10+
+**Status: 0.1.0 alpha.** Windows 10+
 and CPython 3.10+ are the intended targets. There are no runtime dependencies.
 This repository is not yet published to PyPI; install from a local checkout.
 
 ## Quick start
 
-In PowerShell, from the checkout:
+In PowerShell:
 
 ```powershell
+git clone https://github.com/xuchangjiachuang-bot/windows-task-check.git
+cd windows-task-check
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install .
 .\.venv\Scripts\python.exe -m wintaskcheck check --output-dir .\runtime\checks
@@ -65,7 +67,8 @@ print(result["state"], result["exit_code"], result["receipt"])
 ## Results and completion
 
 Each run gets a unique subdirectory containing `stdout.log`, `stderr.log` and
-`result.json`. Receipts are atomically replaced on state changes. A validation or
+`result.json`. JSON receipts use UTF-8; read them with an explicit UTF-8 encoding.
+Receipts are atomically replaced on state changes. A validation or
 launch failure may have no log files. If the output directory itself is unusable,
 no receipt can be written; run with `python.exe` for the CLI error response.
 Errors include a stage (`validation`, `launch`, `wait`, `cleanup`) and exception/

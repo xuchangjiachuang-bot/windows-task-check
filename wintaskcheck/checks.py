@@ -37,7 +37,7 @@ def check(output_dir="wintask-runs"):
             passed = (result["state"] == "completed" and result["exit_code"] == code
                       and observed["console_handle"] == 0 and observed["args"] == literal
                       and observed["cwd"] == str(work) and observed["stdin_eof"]
-                      and "synthetic stderr" in Path(result["stderr"]).read_text())
+                      and "synthetic stderr" in Path(result["stderr"]).read_text(encoding="utf-8"))
         except (OSError, ValueError, KeyError):
             passed = False
         cases.append({"name": f"python_exit_{code}_console_arguments_logs", "passed": passed, "receipt": result["receipt"]})
@@ -66,7 +66,7 @@ exit 37
     ready = work / "tree.json"
     result = run([python, probe, "tree", str(ready)], output_dir=root, timeout=3)
     try:
-        pids = json.loads(ready.read_text())
+        pids = json.loads(ready.read_text(encoding="utf-8"))
         passed = result["state"] == "timed_out" and not any(process_alive(pid) for pid in pids.values())
     except (OSError, ValueError):
         passed = False

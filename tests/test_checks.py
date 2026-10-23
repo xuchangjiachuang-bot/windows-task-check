@@ -14,7 +14,7 @@ class AcceptanceTests(unittest.TestCase):
             result = check(root)
             self.assertTrue(result["passed"], result)
             self.assertGreaterEqual(len(result["cases"]), 4)
-            self.assertEqual(json.loads(Path(result["report"]).read_text()), result)
+            self.assertEqual(json.loads(Path(result["report"]).read_text(encoding="utf-8")), result)
 
 
 if __name__ == "__main__":

@@ -81,6 +81,7 @@ _exit_code = _bind("GetExitCodeProcess", [W.HANDLE, C.POINTER(W.DWORD)])
 _duplicate = _bind("DuplicateHandle", [W.HANDLE, W.HANDLE, W.HANDLE, C.POINTER(W.HANDLE), W.DWORD, W.BOOL, W.DWORD])
 _current = _bind("GetCurrentProcess", [], W.HANDLE)
 _open_process = _bind("OpenProcess", [W.DWORD, W.BOOL, W.DWORD], W.HANDLE)
+_in_job = _bind("IsProcessInJob", [W.HANDLE, W.HANDLE, C.POINTER(W.BOOL)])
 _console = _bind("GetConsoleWindow", [], W.HWND)
 
 
@@ -178,20 +179,72 @@ class ProcessTree:
             if deadline is not None and time.monotonic() >= deadline:
                 return None
 
+    def _member_handles(self):
+        # Hold real handles before termination: job accounting can reach zero
+        # before a terminating process becomes signaled. PID-only polling also
+        # risks observing a reused PID belonging to an unrelated process.
+        capacity = 32
+        while capacity <= 1048576:
+            class PROCESS_IDS(C.Structure):
+                _fields_ = [("assigned", W.DWORD), ("count", W.DWORD),
+                            ("ids", SIZE * capacity)]
+            members = PROCESS_IDS()
+            if _query_job(self.job, 3, C.byref(members), C.sizeof(members), None):
+                break
+            error = C.get_last_error()
+            if error != 234:  # ERROR_MORE_DATA: membership grew during query
+                raise C.WinError(error)
+            capacity = max(capacity * 2, members.assigned)
+        else:
+            raise OSError("Process-tree membership exceeds cleanup capacity")
+        handles = []
+        try:
+            for pid in members.ids[:members.count]:
+                if pid == self.pid:
+                    continue
+                handle = _open_process(0x100000 | 0x1000, False, pid)
+                if not handle:
+                    if C.get_last_error() == 87:  # already exited
+                        continue
+                    raise C.WinError(C.get_last_error())
+                try:
+                    member = W.BOOL()
+                    checked(_in_job(handle, self.job, C.byref(member)))
+                    if member.value:
+                        handles.append(handle)
+                        handle = None
+                finally:
+                    if handle:
+                        close(handle)
+            return handles
+        except BaseException:
+            for handle in handles:
+                close(handle)
+            raise
+
     def terminate(self, code=124):
-        checked(_terminate_job(self.job, code))
-        deadline = time.monotonic() + 10
-        wait_result = _wait(self.process, 10000)
-        if wait_result != 0:
-            raise OSError("Root process did not finish termination within 10 seconds")
-        while True:
-            accounting = ACCOUNTING()
-            checked(_query_job(self.job, 1, C.byref(accounting), C.sizeof(accounting), None))
-            if accounting.ActiveProcesses == 0:
-                return
-            if time.monotonic() >= deadline:
-                raise OSError("Process-tree cleanup did not complete within 10 seconds")
-            time.sleep(0.01)
+        handles = self._member_handles()
+        try:
+            checked(_terminate_job(self.job, code))
+            deadline = time.monotonic() + 10
+            for handle in [self.process, *handles]:
+                remaining = max(0, int((deadline - time.monotonic()) * 1000))
+                result = _wait(handle, remaining)
+                if result == 0xFFFFFFFF:
+                    raise C.WinError(C.get_last_error())
+                if result != 0:
+                    raise OSError("Process-tree cleanup did not complete within 10 seconds")
+            while True:
+                accounting = ACCOUNTING()
+                checked(_query_job(self.job, 1, C.byref(accounting), C.sizeof(accounting), None))
+                if accounting.ActiveProcesses == 0:
+                    return
+                if time.monotonic() >= deadline:
+                    raise OSError("Process-tree cleanup did not complete within 10 seconds")
+                time.sleep(0.01)
+        finally:
+            for handle in handles:
+                close(handle)
 
     def close(self):
         if self.job:
