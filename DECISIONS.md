@@ -5,3 +5,5 @@
 - 2026-10-23 | Use Windows 10 job-list process creation plus kill-on-close; terminate remaining descendants when the direct child exits. This gives finite tasks a defined lifecycle.
 - 2026-10-23 | Proposed MIT license, consistent with the maintainer's prior delegated license choice; no copied third-party implementation or private Git history.
 - 2026-10-23 | Keep lock recovery manual and conservative; do not infer death from lock age or delete inaccessible locks.
+- 2026-10-23 | User authorized GitHub publication, CI verification, then preparation of grant materials; no grant submission requested.
+- 2026-10-23 | First hosted CI exposed locale/path assumptions and asynchronous descendant termination. Use explicit UTF-8 reads and resolved fixture paths; hold job-member process handles before terminating and wait for them, with bounded cleanup and job accounting checks.

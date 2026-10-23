@@ -1,5 +1,7 @@
 # Windows Task Check
 
+[![Windows acceptance](https://github.com/xuchangjiachuang-bot/windows-task-check/actions/workflows/test.yml/badge.svg)](https://github.com/xuchangjiachuang-bot/windows-task-check/actions/workflows/test.yml)
+
 Run a finite Windows task without allocating a console, preserve its exit code,
 and retain evidence of what happened. Includes executable acceptance checks for
 Python, PowerShell, literal arguments and process-tree timeouts.
@@ -162,9 +164,11 @@ both `python.exe` and `pythonw.exe`, including Windows PowerShell and PowerShell
 An on-demand limited interactive Task Scheduler test returned 37, recorded a zero
 child console handle, and removed its temporary task afterward.
 
-Other Windows/Python
-versions in the CI matrix are intended coverage, not evidence of successful runs
-until CI actually executes. Visual flash detection, login/reboot behavior, service
+GitHub Actions [passed all six matrix jobs](https://github.com/xuchangjiachuang-bot/windows-task-check/actions/runs/39911449922)
+on 2026-10-23: Windows Server 2022/2025 and CPython 3.10/3.12/3.13, running the
+23-test regression suite and executable acceptance checks in each job.
+These server images do not establish coverage of every Windows desktop version.
+Visual flash detection, login/reboot behavior, service
 sessions and uv launcher re-execution remain unverified. Run `check` with the exact
 interpreter/environment you intend to deploy. This alpha has no verified external
 adoption yet and is not endorsed by any upstream project or grant program.

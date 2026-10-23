@@ -9,5 +9,6 @@
 - Do not use production jobs, credentials or personal/customer data in examples or tests.
 - The scheduler harness creates/removes only its own temporary task. Do not edit unrelated tasks.
 - Never include runtime/, logs or local environment paths in release archives.
-- Local implementation and packaging are authorized; publishing is a separate step.
+- Public repository: https://github.com/xuchangjiachuang-bot/windows-task-check (main).
+- The maintainer authorized initial GitHub publication and CI on 2026-10-23; grant submission remains separate.
 - Maintain AGENTS.md, STATE.md and DECISIONS.md as the internal project documents.
